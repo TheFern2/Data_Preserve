@@ -39,6 +39,7 @@ The file should include the tags you want to save. At the time of writing the ut
 **NB!** Both configuration files, and their counterparts fileName_Save should be in the Save_Path, otherwise you won't be able to save, load, or verify. Initially you will only have the configuration files, and after saving, the fileName_Save.CFG will be generated.
 
 **NameOfTag||TYPE**
+**FileName.CFG**
 
 ```
 Nums[0]||REAL
