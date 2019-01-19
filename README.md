@@ -13,7 +13,7 @@ The main driver for this project is pylogix by Dustin Roeder.
  - progress (pip)
 
 ## Settings
-If you download the compiled exe, all you need to do is change the settings.
+If you download the [compiled exe](https://github.com/kodaman2/Data_Preserve/releases/download/1.0.3/data_preserve_1.0.3.zip), all you need to do is change the settings.
 Settings are easy enough. If you want to have the config files on the root directory with data_preserve.py or data_preserve.exe leave Save_Path empty. You can also use UNC paths. \\192.168.1.13\c$\PathToFiles\
 
 Lastly add the file names of your config files which can use any extension note that case is sensitive for file names and Files_Extension. The names to the left of the equal sign under [Files_Path] can be changed to anything too.
@@ -36,6 +36,8 @@ File_02=My_DPreserve_2
 The configuration files can be named anything, and have any extension you'd like. I use CFG for configuration but that's an arbitrary name.
 
 The file should include the tags you want to save. At the time of writing the utility, supports BOOL, REAL, DINT, SINT. For whatever reasons the CFG files that I initially wrote the script for contained BIT which is the same as BOOL, nevertheless stick to using BOOL.
+
+**NB!** Both configuration files, and their counterparts fileName_Save should be in the Save_Path, otherwise you won't be able to save, load, or verify. Initially you will only have the configuration files, and after saving, the fileName_Save.CFG will be generated.
 
 **NameOfTag||TYPE**
 
