@@ -78,3 +78,5 @@ If all the tags are on the + sign they loaded correctly to the PLC, the ones on 
 
 ![Imgur](https://i.imgur.com/ECMP6bX.png)
 
+Any questions let me know, and this is open to contributions too!
+
