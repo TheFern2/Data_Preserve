@@ -67,7 +67,9 @@ Launch the exe or py script and make sure the settings.ini is in the same direct
 ![enter image description here](https://i.imgur.com/UdBWh5H.png)
 
 Save: This will save the data for all the tags in your configuration files.
+
 Load: This will load the FileName.CFG tags to the PLC (**Will overwrite tags online: Use caution if you don't know what you're doing!**)
+
 Verify: Verifies the tags with online, it doesn't modify any files nor online plc data.
 
 ![Imgur](https://i.imgur.com/kPFRleP.png)
