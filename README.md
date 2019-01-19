@@ -1,6 +1,5 @@
 # Data_Preserve
 
-## Description
 This project started small.  The intent was to only save tag information from Allen Bradley PLC through Ethernet communication, but then it grew to loading and verifying. Soon after that I wanted more visual feedback so I added a progress bar, and later on an error log. The settings can be changed through an INI file without the need to recompile the exe which I did in pyinstaller, useful for machines without python.
 
 The reason I wrote this utility was that the current tool I had at hand was too slow and progress feedback was terrible through the HMI. At times I thought the HMI froze up. This utility is useful if you want to save data and load it back on another PLC, or even the same one after an update. Useful for saving calibration data, setup data, or any data that should be loaded back in the PLC after a full download. By data I mean Allen Bradley controller tags or program tags.
