@@ -78,5 +78,13 @@ If all the tags are on the + sign they loaded correctly to the PLC, the ones on 
 
 ![Imgur](https://i.imgur.com/ECMP6bX.png)
 
-Any questions let me know, and this is open to contributions too!
+## Design
+The design of this program attempts to solve one problem that is interact with online data PLC (Programmable Logic Controllers) Allen Bradley.  Some of the main features are below:
 
+ - Error log
+ - Exception handling
+ - Feedback for the user (Progress bar, and results)
+ - Customization through settings
+ - Functions are divided by responsibility
+
+Any questions let me know, and this is open to contributions too!
