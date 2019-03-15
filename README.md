@@ -7,12 +7,12 @@ The reason I wrote this utility was that the current tool I had at hand was too 
 ## Dependencies
 The main driver for this project is pylogix by Dustin Roeder. 
 
- -  [pylogix](https://github.com/dmroeder/pylogix) (pip in the near future, need eip.py and lgxDevice.py in the same directory as data_preserve.py)
+ -  [pylogix](https://github.com/dmroeder/pylogix) (pip install git+https://github.com/dmroeder/pylogix)
  - ping3 (pip)
  - progress (pip)
 
 ## Settings
-If you download the [compiled exe](https://github.com/kodaman2/Data_Preserve/releases/download/1.0.3/data_preserve_1.0.3.zip), all you need to do is change the settings.
+If you download the [compiled exe](https://github.com/kodaman2/Data_Preserve/releases/latest), all you need to do is change the settings.
 Settings are easy enough. If you want to have the config files on the root directory with data_preserve.py or data_preserve.exe leave Save_Path empty. You can also use UNC paths. \\192.168.1.13\c$\PathToFiles\
 
 Lastly add the file names of your config files which can use any extension note that case is sensitive for file names and Files_Extension. The names to the left of the equal sign under [Files_Path] can be changed to anything too.
