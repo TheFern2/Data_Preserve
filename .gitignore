@@ -1,2 +1,6 @@
 log.txt
 .vscode
+__pycache__/
+build/
+data_preserve.spec
+dist/
