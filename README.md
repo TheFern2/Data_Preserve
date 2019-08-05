@@ -17,19 +17,37 @@ Settings are easy enough. If you want to have the config files on the root direc
 
 Lastly add the file names of your config files which can use any extension note that case is sensitive for file names and Files_Extension. The names to the left of the equal sign under [Files_Path] can be changed to anything too.
 
+## Latest Update
+I've added some features, ability to have remote and local paths. Basically the remote path is thought of being gone and deleted so everything is backed up to the root directory if Local_Save_Path is empty or another path if you provide one.
+
+In addition to the remote files being coped to local save path or root dir. I've added Folder_Copy_On_Save and Folder_Copy_On_Load for copying additional folders that are not related to data preserve again with the mindset that remote paths will be deleted and need to be backed up.
+
 Settings.ini below:
 
-[Settings]  
-PLC_IP=10.0.2.15  
-PLC_SLOT=2  
-Save_Path=C:\\PathToFiles\\  
-Files_Extension=CFG  
-  
-; Add data preserve files below without extension  
-[Files_Path]  
+```
+[Settings]
+PLC_IP=192.168.176.1
+PLC_SLOT=1
+Remote_Save_Path=C:\Users\CanrigAdmin\Documents\Temps\dp_test\dpu_DP
+Local_Save_Path=C:\Users\CanrigAdmin\Documents\Temps\dp_test\local_DP
+Files_Extension=CFG
 
-File_01=My_DPreserve  
-File_02=My_DPreserve_2
+; Add data preserve files below without extension
+[Remote_Files]
+File_01=DataPreserve_01
+File_02=DataPreserve_02
+
+[Local_Files]
+File_01=DataPreserve_03
+
+; copies another folder not related to dp to root dir
+[Folder_Copy_On_Save]
+Path_01=C:\SomePath
+
+; copies a root dir folder note related to dp to a remote dir
+[Folder_Copy_On_Load]
+Path_01=C:\SomePath
+```
 
 ## Configuration Files
 The configuration files can be named anything, and have any extension you'd like. I use CFG for configuration but that's an arbitrary name.
