@@ -18,7 +18,7 @@
 """
 
 from pylogix import PLC
-# from ping3 import ping
+from ping3 import ping
 import configparser, argparse
 import sys
 from pathlib import Path
@@ -27,6 +27,8 @@ import datetime, time
 import re
 import shutil
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 # variables are read from Settings.ini
 main_controller_ip = ''
@@ -297,9 +299,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # ping controller
-    # if ping(main_controller_ip) is None:
-    #     print("Check Settings.ini or ethernet connection!")
-    #     sys.exit()
+    if ping(main_controller_ip) is None:
+        print("Check Settings.ini or ethernet connection!")
+        sys.exit()
 
     # if local path is empty use root dir
     if dp_save_local_path == "":            
