@@ -43,7 +43,16 @@ local_files = []
 file_extension = ''
 comm = PLC()
 CODE_VERSION = "1.3.0"
-log = open("log.txt", "a+")
+log_file = "log.txt"
+log_formatter = logging.Formatter('%(asctime)s - %(message)s')
+log_handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, 
+                                 backupCount=2, encoding=None, delay=0)
+log_handler.setFormatter(log_formatter)
+log_handler.setLevel(logging.DEBUG)
+app_log = logging.getLogger('root')
+app_log.setLevel(logging.DEBUG)
+app_log.addHandler(log_handler)
+
 now = datetime.datetime.now()
 checkErrorLog = False
 
@@ -123,7 +132,7 @@ def check_multiple(lines, file_name):
     # search if there are more than two
     for index in range(len(lines)):
         if lines[index].count("|") > 2:
-            log.write("%s Save Info: %s line %s Multiple tags in one line\n" % (now.strftime("%c"), file_name, index+1))
+            app_log.info("Save Info: %s line %s Multiple tags in one line" % (file_name, index+1))
             # process line here, and split into more items
             clean_list.extend(split_tag_lines(lines[index]))
         else:
@@ -164,7 +173,7 @@ def process_line_save(line, line_number, file_name):
         tags_list.append(put_string)
 
     except ValueError as e:
-        log.write("%s Save Error: %s line %s tag %s %s\n" % (now.strftime("%c"), file_name, line_number, plc_tag, e))
+        app_log.error("Save Error: %s line %s tag %s %s" % (file_name, line_number, plc_tag, e))
         checkErrorLog = True
 
 
@@ -186,7 +195,7 @@ def process_line_load(line, line_number, file_name):
     ret = comm.Write(plc_tag, dp_value)
    
     if ret.Status != "Success":
-        log.write("%s Load Error: %s line %s tag  %s %s\n" % (now.strftime("%c"), file_name, line_number, plc_tag, ret.Status))
+        app_log.error("Load Error: %s line %s tag  %s %s" % (file_name, line_number, plc_tag, ret.Status))
         checkErrorLog = True
 
 
@@ -198,7 +207,7 @@ def process_line_verification(line, line_number, file_name):
     try:
         str_tag = str(read_tag(plc_tag))
     except ValueError as e:
-        log.write("%s Verify Error: %s line %s tag %s %s\n" % (now.strftime("%c"), file_name, line_number, plc_tag, e))
+        app_log.error("Verify Error: %s line %s tag %s %s" % (file_name, line_number, plc_tag, e))
         str_tag = "None"
         checkErrorLog = True
 
@@ -206,7 +215,7 @@ def process_line_verification(line, line_number, file_name):
     if str_tag == dp_value:
         return True
     else:
-        log.write("%s Compare Error: %s line %s tag %s online value %s - dp value %s\n" % (now.strftime("%c"), file_name, line_number, plc_tag, str_tag, dp_value))
+        app_log.error("Compare Error: %s line %s tag %s online value %s - dp value %s" % (file_name, line_number, plc_tag, str_tag, dp_value))
         checkErrorLog = True
         return False
 
@@ -316,11 +325,29 @@ if __name__ == '__main__':
             proceed_to_load = True
 
         if proceed_to_load:
+            head, tail = os.path.split(dp_save_remote_path)
+            path = os.getcwd() + "\\" + tail
             print_header()
+            
+            # copy util root dir to remote path
+            if args.copy_to_remote_dir and os.path.exists(dp_save_remote_path):
+                if os.path.exists(path):
+                    copytree2(path, dp_save_remote_path)
+                else:
+                    print("Please save data preserve first with -c or --copy-to-local-dir argument")
+                    sys.exit()
+            if args.copy_to_remote_dir and not os.path.exists(dp_save_remote_path):
+                if os.path.exists(path):
+                    if not os.path.exists(dp_save_remote_path):
+                        os.mkdir(dp_save_remote_path)
+                    copytree2(path, dp_save_remote_path)
+                else:
+                    print("Please save data preserve first with -c or --copy-to-local-dir argument")
+                    sys.exit()
+
             # ensure remote file names from ini have their save counterparts
             # also checks if files exist on util root dir
-            for config_file in remote_files:
-                head, tail = os.path.split(dp_save_remote_path)            
+            for config_file in remote_files:            
                 path = os.getcwd() + "\\" + tail
                 root_file = Path(path + "\\" + config_file + "_save." + file_extension)
                 temp_file = Path(dp_save_remote_path + "\\" + config_file + "_save." + file_extension)
@@ -338,14 +365,8 @@ if __name__ == '__main__':
             print("Loading data preserve...\n")
             start = time.time()
 
-            for config_file in remote_files:
-                head, tail = os.path.split(dp_save_remote_path)            
+            for config_file in remote_files:           
                 path = os.getcwd() + "\\" + tail
-                if not os.path.exists(dp_save_remote_path):
-                    os.mkdir(dp_save_remote_path)
-                # copy util root dir to remote path
-                if args.copy_to_remote_dir and os.path.exists(path):
-                    copytree2(path, dp_save_remote_path)
                 load_verify_data_preserve(dp_save_remote_path, config_file)
 
             for config_file in local_files:
@@ -353,8 +374,7 @@ if __name__ == '__main__':
 
             # copy folders from root to config path on load
             for config_path in paths_on_load:
-                # make dir on util root dir
-                head, tail = os.path.split(config_path)            
+                # make dir on util root dir           
                 path = os.getcwd() + "\\" + tail
                 if not os.path.exists(path):
                     os.mkdir(path)
@@ -372,10 +392,8 @@ if __name__ == '__main__':
                 time.sleep(args.auto_close)
             else:
                 input("Press Enter to exit...")
-            log.close()
         else:
             print("Exiting...")
-            log.close()
             sys.exit()
 
     if args.save:
@@ -433,7 +451,6 @@ if __name__ == '__main__':
             time.sleep(args.auto_close)
         else:
             input("Press Enter to exit...")
-        log.close()
 
     if args.verify:
         print_header()
@@ -464,7 +481,6 @@ if __name__ == '__main__':
         print("%s Time Elapsed" % (convert(end - start)))
 
         if checkErrorLog:
-            #print("Check log.txt in root directory for errors!")
             print("Check %s\\log.txt for errors!" % (os.getcwd()))
 
         if args.auto_close:
@@ -472,4 +488,3 @@ if __name__ == '__main__':
             time.sleep(args.auto_close)
         else:
             input("Press Enter to exit...")
-        log.close()
