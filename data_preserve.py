@@ -18,12 +18,12 @@
 """
 
 from pylogix import PLC
-from ping3 import ping
-import configparser
+# from ping3 import ping
+import configparser, argparse
 import sys
 from pathlib import Path
 from progress.bar import Bar
-import datetime
+import datetime, time
 import re
 import shutil
 import os
@@ -40,7 +40,7 @@ remote_files = []
 local_files = []
 file_extension = ''
 comm = PLC()
-CODE_VERSION = "1.2.0_beta"
+CODE_VERSION = "1.3.0"
 log = open("log.txt", "a+")
 now = datetime.datetime.now()
 checkErrorLog = False
@@ -66,13 +66,13 @@ def get_data_preserve(path, file):
     bar.finish()
     print("\n")
 
-    with open(path + "\\" + file + "_Save." + file_extension, "w") as dp_save_file:
+    with open(path + "\\" + file + "_save." + file_extension, "w") as dp_save_file:
         dp_save_file.writelines(tags_list)
 
 
 def load_verify_data_preserve(path, file, verify_only=False):
 
-    with open(path + "\\" + file + "_Save." + file_extension) as f:
+    with open(path + "\\" + file + "_save." + file_extension) as f:
         all_lines = f.readlines()
 
     all_lines = remove_empty(all_lines)
@@ -103,7 +103,7 @@ def load_verify_data_preserve(path, file, verify_only=False):
 
 
 def read_tag(tag):
-    return comm.Read(tag)
+    return comm.Read(tag).Value
 
 
 def remove_empty(lines):
@@ -181,10 +181,10 @@ def process_line_load(line, line_number, file_name):
         if dp_value == "False":
             dp_value = False
 
-    try:
-        comm.Write(plc_tag, dp_value)
-    except ValueError as e:
-        log.write("%s Load Error: %s line %s tag  %s %s\n" % (now.strftime("%c"), file_name, line_number, plc_tag, e))
+    ret = comm.Write(plc_tag, dp_value)
+   
+    if ret.Status != "Success":
+        log.write("%s Load Error: %s line %s tag  %s %s\n" % (now.strftime("%c"), file_name, line_number, plc_tag, ret.Status))
         checkErrorLog = True
 
 
@@ -240,6 +240,26 @@ def copytree2(src, dst, symlinks=False, ignore=None):
         else:
             shutil.copy2(s, d)
 
+def convert(seconds): 
+    min, sec = divmod(seconds, 60) 
+    hour, min = divmod(min, 60) 
+    return "%d:%02d:%02d" % (hour, min, sec) 
+
+
+def print_header():
+    ascii_art = """
+        ____  ____  __  __
+       / __ \/ __ \/ / / /
+      / / / / /_/ / / / /
+     / /_/ / ____/ /_/ /
+    /_____/_/    \____/
+
+    """
+    print(ascii_art)
+    print("Data Preserve Utility " + CODE_VERSION)
+    print("Author: Fernando ***REMOVED***")
+    print("Source: " + "https://github.com/TheFern2/Data_Preserve")
+
 
 if __name__ == '__main__':
 
@@ -266,52 +286,55 @@ if __name__ == '__main__':
     for key in config['Folder_Copy_On_Save']:
         paths_on_save.append(config['Folder_Copy_On_Save'][key])
 
-    # prompt user if to save or load
-    ascii_art = """
-        ____  ____  __  __
-       / __ \/ __ \/ / / /
-      / / / / /_/ / / / /
-     / /_/ / ____/ /_/ /
-    /_____/_/    \____/
-
-    """
-    print(ascii_art)
-    print("Data Preserve Utility " + CODE_VERSION)
-    print("Author: Fernando B")
-    print("Source: " + "https://github.com/kodaman2/Data_Preserve")
-    answer = input('Options [save, load, verify]\n')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--save', action='store_true', help="Save data preserve")
+    parser.add_argument('-l', '--load', action='store_true', help="Load data preserve")
+    parser.add_argument('-b', '--bypass-prompt', action='store_true', help="Bypass yes/no prompt for loading")
+    parser.add_argument('-v', '--verify', action='store_true', help="Verify data preserve")
+    parser.add_argument('-a', '--auto-close', type=int, nargs='?', const=20, help="Auto close cmd prompt")
+    parser.add_argument('-c', '--copy-to-local-dir', action='store_true', help="Copies data preserve to utility root dir")
+    parser.add_argument('-r', '--copy-to-remote-dir', action='store_true', help="Copies data preserve from utility root dir to remote dir")
+    args = parser.parse_args()
 
     # ping controller
-    if ping(main_controller_ip) is None:
-        print("Check Settings.ini or ethernet connection!")
-        sys.exit()
+    # if ping(main_controller_ip) is None:
+    #     print("Check Settings.ini or ethernet connection!")
+    #     sys.exit()
 
     # if local path is empty use root dir
     if dp_save_local_path == "":            
         dp_save_local_path = os.getcwd()
 
-    if answer == "load":
-        if yes_or_no("Are you sure?"):
+    if args.load:
+        proceed_to_load = False
+        if not args.bypass_prompt:
+            if yes_or_no("Are you sure?"):
+                proceed_to_load = True
+        if args.bypass_prompt:
+            proceed_to_load = True
 
+        if proceed_to_load:
+            print_header()
             # ensure remote file names from ini have their save counterparts
             # also checks if files exist on util root dir
             for config_file in remote_files:
                 head, tail = os.path.split(dp_save_remote_path)            
                 path = os.getcwd() + "\\" + tail
-                root_file = Path(path + "\\" + config_file + "_Save." + file_extension)
-                temp_file = Path(dp_save_remote_path + "\\" + config_file + "_Save." + file_extension)
+                root_file = Path(path + "\\" + config_file + "_save." + file_extension)
+                temp_file = Path(dp_save_remote_path + "\\" + config_file + "_save." + file_extension)
                 if not temp_file.is_file() and not root_file.is_file():
                     print("Please save data preserve first! (Remote path)")
                     sys.exit()
 
             # ensure local file names from ini have their save counterparts
             for config_file in local_files:
-                temp_file = Path(dp_save_local_path + "\\" + config_file + "_Save." + file_extension)
+                temp_file = Path(dp_save_local_path + "\\" + config_file + "_save." + file_extension)
                 if not temp_file.is_file():
                     print("Please save data preserve first! (Local path)")
                     sys.exit()
 
             print("Loading data preserve...\n")
+            start = time.time()
 
             for config_file in remote_files:
                 head, tail = os.path.split(dp_save_remote_path)            
@@ -319,7 +342,8 @@ if __name__ == '__main__':
                 if not os.path.exists(dp_save_remote_path):
                     os.mkdir(dp_save_remote_path)
                 # copy util root dir to remote path
-                copytree2(path, dp_save_remote_path)
+                if args.copy_to_remote_dir and os.path.exists(path):
+                    copytree2(path, dp_save_remote_path)
                 load_verify_data_preserve(dp_save_remote_path, config_file)
 
             for config_file in local_files:
@@ -335,17 +359,25 @@ if __name__ == '__main__':
                 # copy root dir to config path
                 copytree2(path, config_path)
 
-            if checkErrorLog:
-                print("Check log.txt in root directory for errors!")
+            end = time.time()
+            print("%s Time Elapsed" % (convert(end - start)))
 
-            input("Press Enter to exit...")
+            if checkErrorLog:
+                print("Check %s\\log.txt for errors!" % (os.getcwd()))
+
+            if args.auto_close:
+                print("Cmd prompt auto closing in %d seconds" % (args.auto_close))
+                time.sleep(args.auto_close)
+            else:
+                input("Press Enter to exit...")
             log.close()
         else:
             print("Exiting...")
             log.close()
             sys.exit()
 
-    if answer == "save":
+    if args.save:
+        print_header()
         # ensure remote file names exist
         for config_file in remote_files:
             temp_file = Path(dp_save_remote_path + "\\" + config_file + "." + file_extension)
@@ -361,17 +393,18 @@ if __name__ == '__main__':
                 sys.exit()
 
         print("Saving data preserve...\n")
+        start = time.time()
 
         # save data for every file under Remote_Files
         for config_file in remote_files:
             get_data_preserve(dp_save_remote_path, config_file)
-            # make dir on util root dir
-            head, tail = os.path.split(dp_save_remote_path)            
-            path = os.getcwd() + "\\" + tail
-            if not os.path.exists(path):
-                os.mkdir(path)
-            # copy remote dir to util root dir
-            copytree2(dp_save_remote_path, path)
+            # make dir on util root dir && copy remote dir to util root dir (local path)
+            if args.copy_to_local_dir:                
+                head, tail = os.path.split(dp_save_remote_path)            
+                path = os.getcwd() + "\\" + tail
+                if not os.path.exists(path):
+                    os.mkdir(path)
+                copytree2(dp_save_remote_path, path)
 
         # save data for every file under Local_Files
         for config_file in local_files:
@@ -387,28 +420,37 @@ if __name__ == '__main__':
             # copy dir to util root dir
             copytree2(config_path, path)
 
-        if checkErrorLog:
-            print("Check log.txt in root directory for errors!")
+        end = time.time()
+        print("%s Time Elapsed" % (convert(end - start)))
 
-        input("Press Enter to exit...")
+        if checkErrorLog:
+            print("Check %s\\log.txt for errors!" % (os.getcwd()))
+
+        if args.auto_close:
+            print("Cmd prompt auto closing in %d seconds" % (args.auto_close))
+            time.sleep(args.auto_close)
+        else:
+            input("Press Enter to exit...")
         log.close()
 
-    if answer == "verify":
+    if args.verify:
+        print_header()
         # ensure remote file names from ini have their save counterparts
         for config_file in remote_files:
-            temp_file = Path(dp_save_remote_path + "\\" + config_file + "_Save." + file_extension)
+            temp_file = Path(dp_save_remote_path + "\\" + config_file + "_save." + file_extension)
             if not temp_file.is_file():
                 print("Please save data preserve first! (Remote path)")
                 sys.exit()
 
         # ensure local file names from ini have their save counterparts
         for config_file in local_files:
-            temp_file = Path(dp_save_local_path + "\\" + config_file + "_Save." + file_extension)
+            temp_file = Path(dp_save_local_path + "\\" + config_file + "_save." + file_extension)
             if not temp_file.is_file():
                 print("Please save data preserve first! (Local path)")
                 sys.exit()
 
         print("Verifying data...\n")
+        start = time.time()
 
         for config_file in remote_files:
             load_verify_data_preserve(dp_save_remote_path, config_file, True)
@@ -416,8 +458,16 @@ if __name__ == '__main__':
         for config_file in local_files:
             load_verify_data_preserve(dp_save_local_path, config_file, True)
 
-        if checkErrorLog:
-            print("Check log.txt in root directory for errors!")
+        end = time.time()
+        print("%s Time Elapsed" % (convert(end - start)))
 
-        input("Press Enter to exit...")
+        if checkErrorLog:
+            #print("Check log.txt in root directory for errors!")
+            print("Check %s\\log.txt for errors!" % (os.getcwd()))
+
+        if args.auto_close:
+            print("Cmd prompt auto closing in %d seconds" % (args.auto_close))
+            time.sleep(args.auto_close)
+        else:
+            input("Press Enter to exit...")
         log.close()

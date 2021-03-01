@@ -1,0 +1,1 @@
+py -3.7 -m PyInstaller --onefile data_preserve.py
